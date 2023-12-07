@@ -30,7 +30,7 @@ function ManageKeys(props: {masterKey: string}) {
     }
 
     const handleNewKeyEnter = () => {
-        storeNewKey(props.masterKey, newKeyApp, newKey, newKeyUsage)
+        storeNewKey(props.masterKey, newKeyApp, newKey, 'model')
         setAddNewKeyState(false)
     }
 

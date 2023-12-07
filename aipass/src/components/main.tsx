@@ -1,41 +1,60 @@
-import { useEffect, useState } from "react"
-import {Button, CircularProgress, Divider, Flex, Input, InputGroup, InputLeftElement, InputRightElement, Menu, Progress, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@chakra-ui/react'
+import { useCallback, useEffect, useState } from "react"
+import {Button, Checkbox, Divider, Flex, Input, InputGroup, InputLeftElement, InputRightElement, Menu, Progress, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@chakra-ui/react'
 import { generateRandomKey, hasAccount } from "./utils"
 import CreateAccount from "./createAccount"
 import Key from "./key"
-import * as crypto from "crypto"
 import { Eye, EyeClosed } from "@phosphor-icons/react"
 import ManageKeys from "./manageKeys"
-import { DUMMY_DATA } from "./store"
+import { DUMMY_DATA, loginWithMasterKey, retrieveAllPassKeys, storeNewKey } from "./store"
 import UsageInfo from "./usageInfo"
+import APIKey from "./APIkey"
 
 export function Main() {
   
   const [loggedIn, setLoggedIn] = useState<boolean>(false)
-  const [masterKey, setMasterKey] = useState<string>('')
   const account = hasAccount()
   const [mk, setMK] = useState<string>('')
   const handleMKChange = (event) => setMK(event.target.value)
-  const localStorageMK = localStorage.getItem('aiPassMasterKey')
-  const hash = crypto.createHash('sha256')
+  const [masterPassword, setMasterPassword] = useState<string>('')
 
   const [usage, setUsage] = useState<boolean>(false)
+  const [beta, setBeta] = useState<boolean>(false) // POC version
 
-  // TODO automate this
+  // TODO automate whether has key
   const [hasKey, setHasKey] = useState<boolean>(true)
   const [show, setShow] = useState<boolean>(false)
 
   const [manage, setManage] = useState<boolean>(false)
   const [funds, setFunds] = useState<boolean>(false)
+
+  // wallet
+  const [passes, setPasses] = useState({})
+  const [addNewKeyState, setAddNewKeyState] = useState<boolean>(false)
   
-  let body;
+  const [newKey, setNewKey] = useState<string>('') 
+  const handleNewKeyChange = (event) => setNewKey(event.target.value)
+  const [newApp, setAppKey] = useState<string>('') 
+  const handleNewAppChange = (event) => setAppKey(event.target.value)
+  const [newModel, setModelKey] = useState<string>('') 
+  const handleNewModelChange = (event) => setModelKey(event.target.value)
+
+  const handleNewKeyEnter = async() => {
+      await storeNewKey(masterPassword, newApp, newKey, newModel)
+      setAddNewKeyState(false)
+      setPasses(await retrieveAllPassKeys(masterPassword))
+      setNewKey('')
+      setAppKey('')
+      setModelKey('')
+  }
+
+  let body
 
   // checks that masterkey matches on login
-  const handleMKEnter = () => {
-    const hashedMK = hash.update(mk).digest('hex') 
-    if (hashedMK == localStorageMK) {
+  const handleMKEnter = async () => {
+    if (await loginWithMasterKey(mk)) {
       setLoggedIn(true)
-      setMasterKey(mk)
+      setMasterPassword(mk)
+      setPasses(await retrieveAllPassKeys(mk))
     }
   }
   
@@ -47,12 +66,20 @@ export function Main() {
   else if (!loggedIn) {
     body = (
       <>
+      <Flex justifyContent={'space-between'}>
       <Text fontSize={'16px'} fontWeight={'bold'}>Login</Text>
+      <Checkbox colorScheme={'gray'} color={'gray'}
+          isChecked={beta}
+          onChange={(e) => setBeta(e.target.checked)}
+        >
+         POC 
+        </Checkbox>
+        </Flex>
+
           <form
                 onSubmit={e=> {
                     e.preventDefault();
                     handleMKEnter()
-                    // location.assign('?wd=' + mk)
                 }}>
                   <Flex flexDirection={'row'} gap='8px'>
                   
@@ -65,7 +92,6 @@ export function Main() {
                 onChange={handleMKChange}
               />
       
-
               <InputRightElement >
                 <Button h='1.75rem' size='sm' marginRight='6px' onClick={() => setShow(!show)}>
                 {show ? <EyeClosed/> : <Eye/>}
@@ -76,9 +102,60 @@ export function Main() {
                 <Button type="submit" backgroundColor={'#6982D8'} color='white'>Enter</Button>
                 </Flex>
                 </form>
-              
             </>
         )
+  }
+
+  else if (!beta && loggedIn) {
+    body = (
+      <Flex flexDirection={'column'} gap='6px'>
+        <Text fontSize={'14px'} fontWeight={'bold'}>ALL KEYS</Text>
+            {Object.entries(passes).map(
+                ([keyName, keyEntry]) => {
+                    return <APIKey key= {keyName} name={keyName} model={keyEntry['model']} APIkey={keyEntry['key']}/>
+                } 
+            )}
+            
+        {!addNewKeyState && <Button size={'xs'} width= 'fit-content' backgroundColor={'#6982D8'} color={'white'} onClick={() => setAddNewKeyState(true)}>
+          Add Key
+        </Button> }
+
+        { addNewKeyState &&
+          (<>
+          <Divider/>
+            <Input
+              pr='4.5rem'
+              placeholder='new key'
+              value={newKey}
+              onChange={handleNewKeyChange}
+            />
+              <Input
+                pr='4.5rem'
+                placeholder='name/application'
+                value={newApp}
+                onChange={handleNewAppChange}
+              />
+            <Input
+                pr='4.5rem'
+                placeholder=' model'
+                value={newModel}
+                onChange={handleNewModelChange}
+              />
+            
+              <Flex justifyContent={'space-between'}>
+              <Button onClick={handleNewKeyEnter} backgroundColor={'#6982D8'} color='white' size={'xs'} >
+                Enter New Key
+              </Button>
+              <Button onClick={() => setAddNewKeyState(false)} size={'xs'} variant={'outline'}>
+                cancel
+              </Button>
+              </Flex>
+              
+          </>)
+        }
+      </Flex>
+    )
+  
   }
   // correct masterkey input
   else {
@@ -117,11 +194,12 @@ export function Main() {
       <Button  onClick={() => setFunds(!funds)} size ='xs' width = 'fit-content' >
         Manage Funds
       </Button> 
+
       </Flex>
       </>
 
       {usage && <UsageInfo/>}
-      {manage && <ManageKeys masterKey={masterKey}/>}
+      {manage && <ManageKeys masterKey={mk}/>}
       
       </>
     )
@@ -135,6 +213,7 @@ export function Main() {
      
       <Flex flexDirection={'column'} width={'400px'} height='fit-content' padding={'20px'} gap='12px'>
             {body}
+            
       </Flex> 
       {/* <Footer/>  */}
       </>

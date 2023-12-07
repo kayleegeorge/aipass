@@ -1,12 +1,12 @@
 export function hasAccount() {
-    const masterKey = localStorage.getItem('aiPassMasterKey')
+    const masterKey = localStorage.getItem('aiPassMasterSignature')
     if (!masterKey) return false
     return true
 }
 export function getMasterKey() {
     const account = hasAccount()
     if (!account) return ''
-    return localStorage.getItem('aiPassMasterKey')
+    return localStorage.getItem('aiPassMasterSignature')
 }
 
 export function generateRandomKey(length: number = 64) {
