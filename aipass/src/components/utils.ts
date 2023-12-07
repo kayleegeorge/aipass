@@ -9,12 +9,12 @@ export function getMasterKey() {
     return localStorage.getItem('aiPassMasterKey')
 }
 
-export function generateRandomKey(length) {
+export function generateRandomKey(length: number = 64) {
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var randomKey = '';
     for (var i = 0; i < length; i++) {
       var randomCharacter = characters.charAt(Math.floor(Math.random() * characters.length));
       randomKey += randomCharacter;
     }
-    return randomKey;
+    return 'sk-' + randomKey;
   }

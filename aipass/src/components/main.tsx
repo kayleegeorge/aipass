@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react"
-import {Button, CircularProgress, Divider, Flex, Input, InputGroup, InputLeftElement, InputRightElement, Progress, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@chakra-ui/react'
+import {Button, CircularProgress, Divider, Flex, Input, InputGroup, InputLeftElement, InputRightElement, Menu, Progress, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@chakra-ui/react'
 import { generateRandomKey, hasAccount } from "./utils"
 import CreateAccount from "./createAccount"
 import Key from "./key"
 import * as crypto from "crypto"
-import { retrieveAll, storeNewApp } from "./store"
+import { Eye, EyeClosed } from "@phosphor-icons/react"
+import ManageKeys from "./manageKeys"
+import { DUMMY_DATA } from "./store"
+import UsageInfo from "./usageInfo"
 
 export function Main() {
   
-  const [loggedIn, setLoggedIn] = useState<Boolean>(false)
+  const [loggedIn, setLoggedIn] = useState<boolean>(false)
   const [masterKey, setMasterKey] = useState<string>('')
   const account = hasAccount()
   const [mk, setMK] = useState<string>('')
@@ -16,46 +19,18 @@ export function Main() {
   const localStorageMK = localStorage.getItem('aiPassMasterKey')
   const hash = crypto.createHash('sha256')
 
-  const [newKey, setNewKey] = useState<string>('') 
-  const [addNewKeyState, setAddNewKeyState] = useState<Boolean>(false)
-  const handleNewKeyChange = (event) => setNewKey(event.target.value)
-
-  const [newKeyApp, setNewKeyApp] = useState<string>('') 
-  const handleNewKeyAppChange = (event) => setNewKeyApp(event.target.value)
-
-  const [newKeyUsage, setNewKeyUsage] = useState<string>('') 
-  const handleNewKeyUsageChange = (event) => setNewKeyUsage(event.target.value)  
-
-  const handleNewKeyEnter = () => {
-    storeNewApp(masterKey, newKeyApp, newKey, newKeyUsage)
-    setAddNewKeyState(false)
-  }
+  const [usage, setUsage] = useState<boolean>(false)
 
   // TODO automate this
-  const [hasKey, setHasKey] = useState<Boolean>(true)
+  const [hasKey, setHasKey] = useState<boolean>(true)
+  const [show, setShow] = useState<boolean>(false)
 
-  const [totalFunds, setTotalFunds] =useState(100) 
-  const [fundsAllocated, setFundsAllocated] = useState(50)
-
-  const [addFundsState, setAddFundsState] = useState<Boolean>(false)
-  const [addFunds, setAddFunds] = useState('')
-  const handleAddFunds = (event) => setAddFunds(event.target.value)
-  const handleAddFundsTotal = () => {
-    setTotalFunds(totalFunds + Number(addFunds))
-    setAddFundsState(false)
-  }
-
-  const [manage, setManage] = useState<Boolean>(false)
+  const [manage, setManage] = useState<boolean>(false)
+  const [funds, setFunds] = useState<boolean>(false)
   
   let body;
 
-
-  const handleGenerateNewKey = () => {
-    const randomKey = generateRandomKey(60)
-    setNewKey(randomKey)
-  }
-
-  // check that masterkeys match
+  // checks that masterkey matches on login
   const handleMKEnter = () => {
     const hashedMK = hash.update(mk).digest('hex') 
     if (hashedMK == localStorageMK) {
@@ -67,146 +42,56 @@ export function Main() {
   if (!account) {
     body = <CreateAccount/>
   }
-
+  
+  // login panel --> get masterkey
   else if (!loggedIn) {
     body = (
       <>
-          <Text fontSize={'20px'}>Login</Text>
-      
-              <InputGroup size='md'>
+      <Text fontSize={'16px'} fontWeight={'bold'}>Login</Text>
+          <form
+                onSubmit={e=> {
+                    e.preventDefault();
+                    handleMKEnter()
+                    // location.assign('?wd=' + mk)
+                }}>
+                  <Flex flexDirection={'row'} gap='8px'>
+                  
+                <InputGroup size='md'>
               <Input
                 pr='4.5rem'
-                type={'password'}
+                type={show ? 'text' : 'password'}
                 placeholder='Enter Master Password'
                 value={mk}
                 onChange={handleMKChange}
               />
       
-              <InputRightElement width='4.5rem'>
-                <Button h='1.75rem' size='sm' onClick={handleMKEnter}>
-                  {'Enter'}
+
+              <InputRightElement >
+                <Button h='1.75rem' size='sm' marginRight='6px' onClick={() => setShow(!show)}>
+                {show ? <EyeClosed/> : <Eye/>}
                 </Button>
               </InputRightElement>
             </InputGroup>
+
+                <Button type="submit" backgroundColor={'#6982D8'} color='white'>Enter</Button>
+                </Flex>
+                </form>
+              
             </>
         )
   }
-  // has keys
+  // correct masterkey input
   else {
-  //  const allKeys = retrieveAll() 
-  //  console.log(allKeys)
-
-    const manageBody = (
-      <>
-      <Divider />
-
-      <Flex flexDirection={'column'} gap='4px'>
-        <Text fontSize={'14px'} >MANAGE KEYS</Text>
-        <Key key= 'hi' name="tldraw" creditsLeft="20"/>
-        <Key key= 'hi2'  name="app#2" creditsLeft="20"/>
-        <Key key= 'hi1'  name="test" creditsLeft="10"/>
-      </Flex>
-
-      <Flex>
-      <Text fontWeight={'bold'}>{`Total funds: $${totalFunds} ($${fundsAllocated} allocated)`}</Text>
-      </Flex>
-      
-
-        <>
-        <Flex gap='8px'>
-        <Button size={'xs'} width= 'fit-content' colorScheme='orange' variant='outline' onClick={() => setAddNewKeyState(true)}>
-          Add Key
-        </Button>
-        <Button size={'xs'} width= 'fit-content' colorScheme='orange' variant='outline' onClick={() => setAddFundsState(true)}>
-          Add Funds
-        </Button>
-        </Flex>
-        {
-          addFundsState && 
-          <Flex gap ='8px'>
-          <InputGroup>
-                <InputLeftElement
-                pointerEvents='none'
-                color='gray.300'
-                fontSize='1.2em'
-                children='$'
-              />
-              <Input
-                placeholder='enter amt to add'
-                value={addFunds}
-                onChange={handleAddFunds}
-              />
-              </InputGroup>
-              <Button onClick={handleAddFundsTotal} colorScheme='orange'>
-              Add Funds
-            </Button> 
-            </Flex>
-        }
-        { addNewKeyState &&
-          (<>
-          <Divider/>
-
-          <InputGroup size='md'>
-            <Input
-              pr='4.5rem'
-              placeholder='enter new key'
-              value={newKey}
-              onChange={handleNewKeyChange}
-            />
-            <InputRightElement width='4.5rem'>
-              <Button h='1.75rem' size='sm' marginRight= '4px' onClick={handleGenerateNewKey}>
-                Gen Key
-              </Button>
-            </InputRightElement>
-          </InputGroup> 
-              <Input
-                pr='4.5rem'
-                placeholder='new key app name'
-                value={newKeyApp}
-                onChange={handleNewKeyAppChange}
-              />
-              <InputGroup>
-                <InputLeftElement
-                pointerEvents='none'
-                color='gray.300'
-                fontSize='1.2em'
-                children='$'
-              />
-              <Input
-                placeholder='usage limit'
-                value={newKeyUsage}
-                onChange={handleNewKeyUsageChange}
-              />
-              </InputGroup>
-              <Flex justifyContent={'space-between'}>
-              <Button onClick={handleNewKeyEnter} colorScheme='orange' size={'xs'} >
-                Enter New Key
-              </Button>
-              <Button onClick={() => setAddNewKeyState(false)} size={'xs'} variant={'outline'}>
-                cancel
-              </Button>
-              </Flex>
-              
-          </>)
-          
-        }
-      <Button onClick={() => setManage(false)} size ='xs' width = 'fit-content' position={'absolute'} right='10px' bottom={'10px'}>
-        close
-        </Button>
-        
-        </>
-        
-        </>
-    )
-
+    const getKey = DUMMY_DATA['klee']['keys']['test']
 
     body = (
       <>
       {hasKey && <Flex gap = '4px' flexDirection={'column'}>
         {/* <Flex gap ='4px'><Text fontWeight={'bold'} fontSize={'14px'}>{`Current App: `}</Text><Text fontSize={'14px'}>tldr</Text></Flex> */}
       
-        <Flex gap = '4px'>
-          <Text fontWeight={'bold'} fontSize={'14px'}>Current Key: </Text><Key name='tldr' creditsLeft='20'/>
+        <Flex gap = '4px' flexDirection={'column'}>
+          <Flex gap='4px'><Text fontWeight={'bold'} fontSize={'14px'}>App: </Text><Text fontSize={'14px'}>claudered</Text></Flex> 
+          <Flex gap='4px'><Text fontWeight={'bold'} fontSize={'14px'}>Key: </Text><Key name= {'test'} creditsLeft={getKey['remaining_balance']} key={getKey['key']}  limit={getKey['limit']} edit={true} /></Flex>
         </Flex>
         
       </Flex>}
@@ -219,12 +104,24 @@ export function Main() {
         </Button>
       </Flex>}
       
-      {!manage && <Button onClick={() => setManage(true)} size ='xs' width = 'fit-content'>
-        Manage Keys
-      </Button>}
+      <>
+      <Flex gap='8px'>
+       <Button  onClick={() => setUsage(!usage)} size ='xs' width = 'fit-content' >
+        Usage Info
+      </Button> 
 
-      
-      {manage && manageBody}
+      <Button  onClick={() => setManage(!manage)} size ='xs' width = 'fit-content' >
+        Manage Keys
+      </Button>
+
+      <Button  onClick={() => setFunds(!funds)} size ='xs' width = 'fit-content' >
+        Manage Funds
+      </Button> 
+      </Flex>
+      </>
+
+      {usage && <UsageInfo/>}
+      {manage && <ManageKeys masterKey={masterKey}/>}
       
       </>
     )
@@ -235,19 +132,11 @@ export function Main() {
 
     return(
       <>
-      <Flex position={'absolute'} top='10px' right={'10px'}>
-      <Text color={'orange'} fontWeight={'bold'} fontSize={'14px'}>
-        AI
-        </Text>
-        <Text fontWeight={'bold'} fontSize={'14px'}>
-        PASS
-        </Text> 
-      </Flex>
-
+     
       <Flex flexDirection={'column'} width={'400px'} height='fit-content' padding={'20px'} gap='12px'>
             {body}
-          </Flex> 
-      
+      </Flex> 
+      {/* <Footer/>  */}
       </>
     )
 

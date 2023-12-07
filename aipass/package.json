@@ -17,6 +17,7 @@
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@phosphor-icons/react": "^2.0.15",
     "crypto-js": "^4.2.0",
     "framer-motion": "^10.16.12",
     "next": "14.0.2",
