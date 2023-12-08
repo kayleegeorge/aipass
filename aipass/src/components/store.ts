@@ -95,9 +95,6 @@ export async function storeNewKey(masterPassword: string, applicationName: strin
 
 // return key
 export async function retrieveKey(masterPassword: string, keyName: string) {
-    console.log('info')
-    console.log(masterPassword)
-    console.log(keyName) // why is this fucking looping???
     const keys = await deriveSecretKeys(masterPassword)
     const signedName = bufferToUntypedArray(await subtle.sign("HMAC", keys['HMAC'], stringToByteArray(keyName))).toString()
     const encryptedKey = localStorage.getItem(signedName)
