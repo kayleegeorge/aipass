@@ -1,6 +1,6 @@
 # aipass
 
-BYOK (bring your own key) wallet & SDK
+"MetaMask for AI": Bring your own key (BYOK) wallet & SDK. 
 
 **Chrome Extension Flow** 
 
@@ -26,7 +26,7 @@ BYOK (bring your own key) wallet & SDK
 
 **[POC with balance add]**
 
-- SDK for AI app developer // If have not visited AI app before, “connect to wallet” option on AI app web app (i.e. ) —> spawns aiPass connection
+- SDK for AI app developer // If have not visited AI app before, “connect to wallet” option on AI app web app to spawns aiPass connection
   
 <img width="752" alt="Screen Shot 2023-12-08 at 11 37 09 PM" src="https://github.com/kayleegeorge/aipass/assets/62825936/6a239756-d391-4702-a942-cba4c66c7a7c">
 
